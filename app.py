@@ -266,7 +266,8 @@ def leaderboard():
     for i, rd in enumerate(STATE.rounds):
         if rd.answer_xy is None:
             continue
-        row = {"index": i, "map": rd.map_filename, "answer": rd.answer_xy, "guesses": rd.guesses, "scores": {}}
+        guesses_obj = {p: {"x": xy[0], "y": xy[1]} for p, xy in rd.guesses.items()}
+        row = {"index": i, "map": rd.map_filename, "answer": rd.answer_xy, "guesses": guesses_obj, "scores": {}}
         for p in STATE.players:
             if p in rd.guesses:
                 d = pixel_distance(rd.guesses[p], rd.answer_xy)
