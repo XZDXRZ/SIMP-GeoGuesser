@@ -1,9 +1,6 @@
 # SIMP offline geoguesser
 
-Update:
-- You no longer upload a "global map" at the start.
-- Each **round** only needs **one image**: the overall map for that round.
-- Host flow: add players → add round (upload map) → set answer → play.
+Customizable offline GeoGuesser game
 
 ## Run (Windows PowerShell)
 
