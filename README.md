@@ -1,4 +1,4 @@
-# Local Geo Party (offline GeoGuessr-style)
+# SIMP offline geoguesser
 
 Update:
 - You no longer upload a "global map" at the start.
