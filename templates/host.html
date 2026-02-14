@@ -225,7 +225,13 @@
                         </td>
 
                         <td>
-                            <a class="tag" href="{{ url_for('public_round', round_id=rd.id) }}" target="_blank">Open play</a>
+                            <a class="tag player-link"
+                               href="{{ url_for('public_round', round_id=rd.id) }}"
+                               data-answer-set="{{ 1 if rd.answer_xy else 0 }}"
+                               data-set-url="{{ url_for('set_answer', round_id=rd.id) }}"
+                               target="_blank">
+                                Open play
+                            </a>
                         </td>
 
                         <td>
@@ -254,7 +260,11 @@
                 <div class="row">
                     <a class="tag" href="{{url_for('set_answer', round_id=current.id)}}" target="_blank" rel="noopener">Set answer</a>
 
-                    <a class="tag" href="{{url_for('public_round', round_id=current.id)}}" target="_blank">
+                    <a class="tag player-link"
+                       href="{{ url_for('public_round', round_id=current.id) }}"
+                       data-answer-set="{{ 1 if current.answer_xy else 0 }}"
+                       data-set-url="{{ url_for('set_answer', round_id=current.id) }}"
+                       target="_blank">
                         Player link
                     </a>
                 </div>
@@ -291,7 +301,26 @@
             {% endif %}
         </div>
     </div>
+    <div id="answerPopup"
+         style="position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+            background:rgba(16,24,40,0.35); z-index:9999;">
 
+        <div style="background:white; padding:20px; border-radius:16px;
+                max-width:420px; width:90%; border:1px solid var(--border);
+                text-align:center;">
+
+            <h3 style="margin-top:0;">Answer not set</h3>
+            <p class="muted">You must set the answer before players can join.</p>
+
+            <div style="margin-top:14px;">
+                <a id="popupSetLink" class="tag" target="_blank">Go to Set Answer</a>
+            </div>
+
+            <div style="margin-top:16px;">
+                <button id="closePopup" class="btn-ghost" type="button">Close</button>
+            </div>
+        </div>
+    </div>
     <script>
         (function () {
             function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -396,6 +425,29 @@
                 const img = document.getElementById("hostPreviewImg");
                 if (img) img.addEventListener("load", layout);
                 setTimeout(layout, 0);
+            });
+
+            const popup = document.getElementById("answerPopup");
+            const closeBtn = document.getElementById("closePopup");
+            const popupLink = document.getElementById("popupSetLink");
+
+            document.querySelectorAll(".player-link").forEach(link => {
+                link.addEventListener("click", function (e) {
+                    const answerSet = this.dataset.answerSet === "1";
+                    if (!answerSet) {
+                        e.preventDefault();
+                        popup.style.display = "flex";
+                        popupLink.href = this.dataset.setUrl;
+                    }
+                });
+            });
+
+            closeBtn?.addEventListener("click", () => {
+                popup.style.display = "none";
+            });
+
+            popup?.addEventListener("click", (e) => {
+                if (e.target === popup) popup.style.display = "none";
             });
         })();
     </script>
