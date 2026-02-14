@@ -1,7 +1,7 @@
 <!doctype html>
 <html><head>
   <meta charset="utf-8" />
-  <title>Play Round</title>
+  <title>Play Round {{ round_num }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
@@ -11,7 +11,13 @@
     }
     html, body { height: 100%; margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
     body{ background: linear-gradient(180deg, #f6f7fb, #eef2ff); overflow:hidden; }
-    .stage{ position:relative; width:100vw; height:100vh; touch-action:none; }
+      .stage {
+          position: relative;
+          width: 100vw;
+          height: 100vh;
+          touch-action: none;
+          z-index: 0;
+      }
     #mapLayer{ position:absolute; left:0; top:0; right:0; bottom:0; overflow:hidden; }
     #mapImg{
       position:absolute; user-select:none; -webkit-user-drag:none; pointer-events:none;
@@ -19,13 +25,26 @@
     }
     .overlay{ position:absolute; inset:0; pointer-events:none; }
 
-    .hud{
-      position: fixed; top: 14px; left: 14px; right: 14px;
-      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
-      padding: 10px 12px; background: var(--card);
-      border-radius: 14px; border: 1px solid var(--border);
-      z-index: 10;
-    }
+      .hud {
+          position: fixed;
+          top: 14px;
+          left: 14px;
+          right: 14px;
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          align-items: center;
+          padding: 10px 12px;
+          background: var(--card);
+          border-radius: 14px;
+          border: 1px solid var(--border);
+          z-index: 99999; /* FORCE above everything */
+          pointer-events: auto; /* FORCE clickable */
+      }
+          .hud * {
+              pointer-events: auto;
+          }
+      /* ensure links/buttons clickable */
     .roundTitle{
       font-size: 13px;
       font-weight: 950;
@@ -199,6 +218,9 @@ const resetBtn = document.getElementById("resetView");
 const zoomPill = document.getElementById("zoomPill");
 
 const toast = document.getElementById("toast");
+
+document.querySelector(".hud")?.addEventListener("pointerdown", (e) => e.stopPropagation());
+document.querySelector(".hud")?.addEventListener("click", (e) => e.stopPropagation());
 
 let players = [];
 let guesses = {};
@@ -420,13 +442,16 @@ let startPanX = 0, startPanY = 0;
 let moved = false;
 
 stage.addEventListener("pointerdown", (e) => {
-  pointerDown = true;
-  moved = false;
-  startX = e.clientX;
-  startY = e.clientY;
-  startPanX = panX;
-  startPanY = panY;
-  stage.setPointerCapture(e.pointerId);
+    // ✅ If you clicked anything inside the HUD, do NOT start pan/capture
+    if (e.target.closest(".hud")) return;
+
+    pointerDown = true;
+    moved = false;
+    startX = e.clientX;
+    startY = e.clientY;
+    startPanX = panX;
+    startPanY = panY;
+    stage.setPointerCapture(e.pointerId);
 });
 
 stage.addEventListener("pointermove", (e) => {

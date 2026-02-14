@@ -19,7 +19,21 @@
     table{width:100%; border-collapse:collapse;}
     th, td{padding:10px 6px; border-bottom: 1px solid var(--border); text-align:left; font-size:14px;}
     .muted{color:var(--muted);}
-    img{max-width:420px; border-radius:12px; border:1px solid var(--border);}
+      img {
+          border-radius: 12px;
+          border: 1px solid var(--border);
+      }
+
+      .pinwrap {
+          width: 100%;
+          max-width: 1150px;
+      }
+
+      .pinmap {
+          width: 100%;
+          height: auto;
+          display: block;
+      }
     code{background: #f2f4f7; padding: 2px 6px; border-radius: 8px; border: 1px solid var(--border);}
     .row{display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:space-between;}
     .btn{
@@ -71,7 +85,7 @@
       {% else %}
         {% for rd in rounds %}
           <h4 style="margin:10px 0 8px 0;">Round {{rd.index}} — <code>{{rd.map}}</code></h4>
-          <div class="pinwrap" data-round="{{rd.index}}" data-answer-x="{{rd.answer[0]}}" data-answer-y="{{rd.answer[1]}}" style="position:relative; display:inline-block; max-width:420px;">
+          <div class="pinwrap" data-round="{{rd.index}}" data-answer-x="{{rd.answer[0]}}" data-answer-y="{{rd.answer[1]}}" style="position:relative; display:block; width:100%;">
             <img class="pinmap" src="{{url_for('uploads', filename=rd.map)}}" />
             <svg class="pinsvg" style="position:absolute; inset:0; width:100%; height:100%;"></svg>
             <div class="pintooltip" style="position:absolute; display:none; z-index:5; padding:6px 8px; border-radius:10px; background: var(--card); border: 1px solid var(--border); color: var(--text); font-size: 12px; font-weight: 950; box-shadow: 0 6px 20px rgba(16,24,40,0.12); pointer-events:none;"></div>
@@ -177,12 +191,20 @@
     const scaleY = h / img.naturalHeight;
 
     // player pins (blue)
-    for(const [name, pt] of Object.entries(guesses)){
-      if(!pt) continue;
-      const cx = clamp(Math.round(pt.x * scaleX), 0, w);
-      const cy = clamp(Math.round(pt.y * scaleY), 0, h);
-      makePin(svg, cx, cy, "rgba(37,99,235,0.98)", name);
+    for (const [name, pt] of Object.entries(guesses)) {
+        if (!pt) continue;
+
+        let x, y;
+        if (Array.isArray(pt)) { x = pt[0]; y = pt[1]; }
+        else { x = pt.x; y = pt.y; }
+
+        if (x == null || y == null) continue;
+
+        const cx = clamp(Math.round(x * scaleX), 0, w);
+        const cy = clamp(Math.round(y * scaleY), 0, h);
+        makePin(svg, cx, cy, "rgba(37,99,235,0.98)", name);
     }
+
 
     // answer pin (red)
     const ax = Number(wrap.dataset.answerX);

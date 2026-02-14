@@ -1,207 +1,403 @@
 <!doctype html>
-<html><head>
-  <meta charset="utf-8" />
-  <title>Host - Local Geo Party</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root{
-      --bg:#f6f7fb; --card:#ffffff; --text:#101828; --muted:#475467;
-      --border:#e4e7ec; --accent:#2563eb; --accent2:#1d4ed8;
-      --good:#067647; --bad:#b42318; --radius:14px;
-    }
-    body{ margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color:var(--text); background: linear-gradient(180deg, #f6f7fb, #eef2ff); padding:24px 18px; }
-    .wrap{max-width:1150px; margin:0 auto;}
-    h1{margin:0 0 6px 0; font-size:26px; letter-spacing:-0.02em;}
-    .muted{color:var(--muted);}
-    .grid{display:grid; grid-template-columns: 1fr 1fr; gap:14px;}
-    @media (max-width: 980px){ .grid{grid-template-columns:1fr;} }
-    .card{ background: var(--card); border-radius: var(--radius); padding: 18px; border: 1px solid var(--border); }
-    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
-    input, select{
-      padding:10px 12px; border-radius:12px; border:1px solid var(--border);
-      background: white; color: var(--text); outline:none;
-    }
-    input::placeholder{color:#98a2b3;}
-    button{
-      padding:10px 12px; border-radius:12px; border:1px solid var(--border);
-      background: var(--accent); color:white; cursor:pointer; font-weight:800;
-    }
-    button:hover{background: var(--accent2);}
-    .btn-ghost{ background:white; color:var(--text); }
-    .btn-ghost:hover{ background:#f2f4f7; }
-    .err{color:var(--bad); margin:10px 0 0 0; font-weight:700;}
-    table{width:100%; border-collapse:collapse;}
-    th, td{padding:10px 6px; border-bottom: 1px solid var(--border); text-align:left; font-size:14px;}
-    code{background: #f2f4f7; padding: 2px 6px; border-radius: 8px; border: 1px solid var(--border);}
-    .tag{
-      display:inline-flex; padding: 4px 10px; border-radius: 999px;
-      background: #eff6ff; color: #1d4ed8; font-weight: 800; font-size: 12px; border: 1px solid #dbeafe;
-    }
-    img{max-width:100%; border-radius:12px; border:1px solid var(--border);}
-    a{color:var(--accent); text-decoration:none; font-weight:900;}
-    a:hover{text-decoration:underline;}
-  </style>
-</head><body>
-  <div class="wrap">
-    <div class="row" style="justify-content:space-between; align-items:flex-end;">
-      <div>
-        <h1>SIMP GeoGuesser</h1>
-        <div class="muted">A Customizable GeoGuessing Game made for SIMP</div>
-      </div>
-      <div class="row">
-        <a class="tag" href="{{url_for('leaderboard')}}">Leaderboard</a>
-      </div>
-    </div>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Host - Local Geo Party</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            --bg: #f6f7fb;
+            --card: #ffffff;
+            --text: #101828;
+            --muted: #475467;
+            --border: #e4e7ec;
+            --accent: #2563eb;
+            --accent2: #1d4ed8;
+            --good: #067647;
+            --bad: #b42318;
+            --radius: 14px;
+        }
 
-    {% if msg %}<p class="err">{{msg}}</p>{% endif %}
+        body {
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            color: var(--text);
+            background: linear-gradient(180deg, #f6f7fb, #eef2ff);
+            padding: 24px 18px;
+        }
 
-    <div class="grid" style="margin-top:14px;">
-      <div class="card">
-        <div class="tag">Players</div>
-        <div class="muted" style="margin-top:8px;">Add Player names(Can add during round)</div>
-        <form method="post" class="row" style="margin-top:12px;">
-          <input type="hidden" name="action" value="add_player" />
-          <input name="player_name" placeholder="e.g. Roger" />
-          <button type="submit">Add</button>
-        </form>
-        {% if players %}
-          <table style="margin-top:10px;">
-            <tr><th>Name</th><th></th></tr>
-            {% for p in players %}
-            <tr>
-              <td>{{p}}</td>
-              <td>
-                <form method="post" style="margin:0">
-                  <input type="hidden" name="action" value="remove_player" />
-                  <input type="hidden" name="player_name" value="{{p}}" />
-                  <button class="btn-ghost" type="submit">Remove</button>
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-          </table>
-        {% else %}
-          <p class="muted" style="margin-top:10px;">No players yet.</p>
-        {% endif %}
-      </div>
+        .wrap {
+            max-width: 1150px;
+            margin: 0 auto;
+        }
 
-      <div class="card">
-        <div class="tag">Rounds</div>
-        <div class="muted" style="margin-top:8px;">Each round only needs <b>one image</b>: the overall map.</div>
-        <form method="post" enctype="multipart/form-data" class="row" style="margin-top:12px;">
-          <input type="hidden" name="action" value="add_round" />
-          <input type="file" name="map_image" accept=".png,.jpg,.jpeg,.webp" required />
-          <button type="submit">Add round</button>
-        </form>
-        {% if rounds %}
-          <table style="margin-top:10px;">
-            <tr><th>#</th><th>Map</th><th>Answer</th><th></th></tr>
-            {% for rd in rounds %}
-              <tr>
-                <td>{{loop.index0}}</td>
-                <td><code>{{rd.map_filename}}</code></td>
-                <td>
-                  {% if rd.answer_xy %}
-                    <span class="tag" style="background:#ecfdf3;border-color:#abefc6;color:#067647;">set ✅</span>
-                  {% else %}
-                    <span class="tag" style="background:#fff1f3;border-color:#fecdd6;color:#b42318;">not set</span>
-                  {% endif %}
-                </td>
-                <td>
-                  <form method="post" style="margin:0">
-                    <input type="hidden" name="action" value="goto_round" />
-                    <input type="hidden" name="round_index" value="{{loop.index0}}" />
-                    <button class="btn-ghost" type="submit">Open</button>
-                  </form>
-                </td>
-              </tr>
-            {% endfor %}
-          </table>
-        {% else %}
-          <p class="muted" style="margin-top:10px;">No rounds yet.</p>
-        {% endif %}
-      </div>
-    </div>
+        h1 {
+            margin: 0 0 6px 0;
+            font-size: 26px;
+            letter-spacing: -0.02em;
+        }
 
-    <div class="card" style="margin-top:14px;">
-      <div class="tag">Current Round</div>
-      {% if not current %}
-        <p class="muted" style="margin-top:10px;">Add at least 1 round to start.</p>
-      {% else %}
-        <div class="row" style="justify-content:space-between; margin-top:10px;">
-          <div class="muted">Round index: <code>{{round_index}}</code> · Map size: <code>{{current.map_size[0]}}×{{current.map_size[1]}}</code></div>
-          <div class="row">
-            <a class="tag" href="{{url_for('set_answer', round_id=current.id)}}">Set answer</a>
-            <a class="tag" href="{{url_for('play_round', round_id=current.id)}}">Play (zoom/pan)</a>
-          </div>
+        .muted {
+            color: var(--muted);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        @media (max-width: 980px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 18px;
+            border: 1px solid var(--border);
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        input, select {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--text);
+            outline: none;
+        }
+
+            input::placeholder {
+                color: #98a2b3;
+            }
+
+        button {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--accent);
+            color: white;
+            cursor: pointer;
+            font-weight: 800;
+        }
+
+            button:hover {
+                background: var(--accent2);
+            }
+
+        .btn-ghost {
+            background: white;
+            color: var(--text);
+        }
+
+            .btn-ghost:hover {
+                background: #f2f4f7;
+            }
+
+        .err {
+            color: var(--bad);
+            margin: 10px 0 0 0;
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px 6px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            font-size: 14px;
+        }
+
+        code {
+            background: #f2f4f7;
+            padding: 2px 6px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .tag {
+            display: inline-flex;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-weight: 800;
+            font-size: 12px;
+            border: 1px solid #dbeafe;
+        }
+
+        img {
+            max-width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 900;
+        }
+
+            a:hover {
+                text-decoration: underline;
+            }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="row" style="justify-content:space-between; align-items:flex-end;">
+            <div>
+                <h1>SIMP GeoGuesser</h1>
+                <div class="muted">A Customizable GeoGuessing Game made for SIMP</div>
+            </div>
+            <div class="row">
+                <a class="tag" href="{{url_for('leaderboard')}}">Leaderboard</a>
+            </div>
         </div>
-        
-<div style="margin-top:12px;">
-  <div class="muted" style="margin-bottom:10px;">Map preview</div>
 
-  <div id="answerPreviewWrap" style="position:relative; display:inline-block; max-width:100%;">
-    <img id="answerPreviewImg" src="{{url_for('uploads', filename=current.map_filename)}}" />
+        {% if msg %}<p class="err">{{msg}}</p>{% endif %}
 
-    {# Red answer pin overlay (host only) #}
-    {% if current.answer_xy %}
-      <svg id="answerPreviewSvg" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none;">
-        <g id="answerPin">
-          <path id="answerTail" d="" fill="rgba(220,38,38,0.98)" stroke="rgba(16,24,40,0.18)" stroke-width="2"></path>
-          <circle id="answerOuter" cx="0" cy="0" r="11" fill="rgba(255,255,255,0.98)" stroke="rgba(16,24,40,0.18)" stroke-width="2"></circle>
-          <circle id="answerInner" cx="0" cy="0" r="4" fill="rgba(220,38,38,0.98)" stroke="rgba(16,24,40,0.18)" stroke-width="1"></circle>
-        </g>
-      </svg>
-    {% endif %}
-  </div>
-</div>
+        <div class="grid" style="margin-top:14px;">
+            <div class="card">
+                <div class="tag">Players</div>
+                <div class="muted" style="margin-top:8px;">Add Player names(Can add during round)</div>
+                <form method="post" class="row" style="margin-top:12px;">
+                    <input type="hidden" name="action" value="add_player" />
+                    <input name="player_name" placeholder="e.g. Roger" />
+                    <button type="submit">Add</button>
+                </form>
+                {% if players %}
+                <table style="margin-top:10px;">
+                    <tr><th>Name</th><th></th></tr>
+                    {% for p in players %}
+                    <tr>
+                        <td>{{p}}</td>
+                        <td>
+                            <form method="post" style="margin:0">
+                                <input type="hidden" name="action" value="remove_player" />
+                                <input type="hidden" name="player_name" value="{{p}}" />
+                                <button class="btn-ghost" type="submit">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% else %}
+                <p class="muted" style="margin-top:10px;">No players yet.</p>
+                {% endif %}
+            </div>
 
-{% if current.answer_xy %}
-<script>
-(function(){
-  const img = document.getElementById("answerPreviewImg");
-  const outer = document.getElementById("answerOuter");
-  const inner = document.getElementById("answerInner");
-  const tail  = document.getElementById("answerTail");
+            <div class="card">
+                <div class="tag">Rounds</div>
+                <div class="muted" style="margin-top:8px;">Each round only needs <b>one image</b>: the overall map.</div>
+                <form method="post" enctype="multipart/form-data" class="row" style="margin-top:12px;">
+                    <input type="hidden" name="action" value="add_round" />
+                    <input type="file" name="map_image" accept=".png,.jpg,.jpeg,.webp" required />
+                    <button type="submit">Add round</button>
+                </form>
+                {% if rounds %}
+                <table style="margin-top:10px;">
+                    <tr><th>#</th><th>Map</th><th>Answer</th><th>Play link</th><th></th></tr>
+                    {% for rd in rounds %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td><code>{{rd.map_filename}}</code></td>
 
-  const ax = Number("{{current.answer_xy[0]}}");
-  const ay = Number("{{current.answer_xy[1]}}");
+                        <td>
+                            {% if rd.answer_xy %}
+                            <span class="tag" style="background:#ecfdf3;border-color:#abefc6;color:#067647;">set ✅</span>
+                            {% else %}
+                            <span class="tag" style="background:#fff1f3;border-color:#fecdd6;color:#b42318;">not set</span>
+                            {% endif %}
+                        </td>
 
-  function layout(){
-    if(!img || !img.complete) return;
+                        <td>
+                            <a class="tag" href="{{ url_for('public_round', round_id=rd.id) }}" target="_blank">Open play</a>
+                        </td>
 
-    const rect = img.getBoundingClientRect();
-    const scaleX = rect.width / img.naturalWidth;
-    const scaleY = rect.height / img.naturalHeight;
+                        <td>
+                            <form method="post" style="margin:0">
+                                <input type="hidden" name="action" value="goto_round" />
+                                <input type="hidden" name="round_index" value="{{loop.index0}}" />
+                                <button class="btn-ghost" type="submit">Open</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% else %}
+                <p class="muted" style="margin-top:10px;">No rounds yet.</p>
+                {% endif %}
+            </div>
+        </div>
 
-    const cx = ax * scaleX;
-    const cy = ay * scaleY;
+        <div class="card" style="margin-top:14px;">
+            <div class="tag">Current Round</div>
+            {% if not current %}
+            <p class="muted" style="margin-top:10px;">Add at least 1 round to start.</p>
+            {% else %}
+            <div class="row" style="justify-content:space-between; margin-top:10px;">
+                <div class="muted">Round: <code>{{round_index + 1}}</code> · Map size: <code>{{current.map_size[0]}}×{{current.map_size[1]}}</code></div>
+                <div class="row">
+                    <a class="tag" href="{{url_for('set_answer', round_id=current.id)}}" target="_blank" rel="noopener">Set answer</a>
 
-    outer.setAttribute("cx", cx);
-    outer.setAttribute("cy", cy);
-    inner.setAttribute("cx", cx);
-    inner.setAttribute("cy", cy);
+                    <a class="tag" href="{{url_for('public_round', round_id=current.id)}}" target="_blank">
+                        Player link
+                    </a>
+                </div>
+            </div>
 
-    // small triangle tail
-    const d = `M ${cx} ${cy+11} L ${cx-6} ${cy+25} L ${cx+6} ${cy+25} Z`;
-    tail.setAttribute("d", d);
-  }
+            <div style="margin-top:12px;">
+                <div class="muted" style="margin-bottom:10px;">Map preview (player guesses)</div>
 
-  img.addEventListener("load", layout);
-  window.addEventListener("resize", layout);
-  // in case cached
-  setTimeout(layout, 0);
-})();
-</script>
-{% endif %}
+                <div id="hostPreviewWrap" style="position:relative; display:block; width:100%; max-width:1150px;">
+                    <img id="hostPreviewImg"
+                         src="{{ url_for('uploads', filename=current.map_filename) }}"
+                         style="width:100%; height:auto; border-radius:12px; border:1px solid var(--border);" />
 
-        <hr style="border:none; height:1px; background:var(--border); margin:14px 0;">
-        <form method="post" class="row">
-          <input type="hidden" name="action" value="reset_game" />
-          <button class="btn-ghost" type="submit" onclick="return confirm('Reset players & rounds?')">Reset players & rounds</button>
-        </form>
-      {% endif %}
+                    <!-- pins overlay -->
+                    <svg id="hostPreviewSvg" style="position:absolute; inset:0; width:100%; height:100%;"></svg>
+
+                    <!-- hover tooltip -->
+                    <div id="hostPreviewTooltip"
+                         style="position:absolute; display:none; z-index:5; padding:6px 8px; border-radius:10px;
+                background: var(--card); border: 1px solid var(--border); color: var(--text);
+                font-size:12px; font-weight:950; box-shadow:0 6px 20px rgba(16,24,40,0.12);
+                pointer-events:none;"></div>
+                </div>
+
+                <!-- send guesses to JS (player pins only) -->
+                <script type="application/json" id="hostGuessesJson">{{ (current.guesses or {}) | tojson }}</script>
+            </div>
+
+            <hr style="border:none; height:1px; background:var(--border); margin:14px 0;">
+            <form method="post" class="row">
+                <input type="hidden" name="action" value="reset_game" />
+                <button class="btn-ghost" type="submit" onclick="return confirm('Reset players & rounds?')">Reset players & rounds</button>
+            </form>
+            {% endif %}
+        </div>
     </div>
 
-  </div>
-</body></html>
+    <script>
+        (function () {
+            function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+            function makePin(svg, cx, cy, label) {
+                const ns = "http://www.w3.org/2000/svg";
+                const g = document.createElementNS(ns, "g");
+                g.classList.add("pin");
+                g.dataset.label = label;
+
+                const tail = document.createElementNS(ns, "path");
+                tail.setAttribute("d", `M ${cx} ${cy + 11} L ${cx - 6} ${cy + 25} L ${cx + 6} ${cy + 25} Z`);
+                tail.setAttribute("fill", "rgba(37,99,235,0.98)");
+                tail.setAttribute("stroke", "rgba(16,24,40,0.18)");
+                tail.setAttribute("stroke-width", "2");
+
+                const outer = document.createElementNS(ns, "circle");
+                outer.setAttribute("cx", cx);
+                outer.setAttribute("cy", cy);
+                outer.setAttribute("r", "11");
+                outer.setAttribute("fill", "rgba(255,255,255,0.98)");
+                outer.setAttribute("stroke", "rgba(16,24,40,0.18)");
+                outer.setAttribute("stroke-width", "2");
+
+                const inner = document.createElementNS(ns, "circle");
+                inner.setAttribute("cx", cx);
+                inner.setAttribute("cy", cy);
+                inner.setAttribute("r", "4");
+                inner.setAttribute("fill", "rgba(37,99,235,0.98)");
+                inner.setAttribute("stroke", "rgba(16,24,40,0.18)");
+                inner.setAttribute("stroke-width", "1");
+
+                g.appendChild(tail);
+                g.appendChild(outer);
+                g.appendChild(inner);
+                svg.appendChild(g);
+            }
+
+            function getGuesses() {
+                const el = document.getElementById("hostGuessesJson");
+                if (!el) return {};
+                try { return JSON.parse(el.textContent || "{}"); } catch { return {}; }
+            }
+
+            function layout() {
+                const img = document.getElementById("hostPreviewImg");
+                const svg = document.getElementById("hostPreviewSvg");
+                const tooltip = document.getElementById("hostPreviewTooltip");
+                if (!img || !svg) return;
+                if (!img.naturalWidth || !img.naturalHeight) return;
+
+                const rect = img.getBoundingClientRect();
+                const w = rect.width;
+                const h = rect.height;
+
+                svg.setAttribute("width", w);
+                svg.setAttribute("height", h);
+                svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+
+                while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+                const guesses = getGuesses();
+                const sx = w / img.naturalWidth;
+                const sy = h / img.naturalHeight;
+
+                // ✅ Player pins only (NO answer pin)
+                for (const [name, pt] of Object.entries(guesses)) {
+                    let x, y;
+                    if (Array.isArray(pt)) { x = pt[0]; y = pt[1]; }
+                    else { x = pt?.x; y = pt?.y; }
+
+                    if (x == null || y == null) continue;
+                    const cx = clamp(Math.round(x * sx), 0, w);
+                    const cy = clamp(Math.round(y * sy), 0, h);
+                    makePin(svg, cx, cy, name);
+                }
+
+                // hover tooltip (optional but nice)
+                if (tooltip) {
+                    const show = (e, label) => {
+                        tooltip.textContent = label;
+                        tooltip.style.display = "block";
+                        const pad = 10;
+                        const x = clamp(e.offsetX + 12, pad, w - tooltip.offsetWidth - pad);
+                        const y = clamp(e.offsetY + 12, pad, h - tooltip.offsetHeight - pad);
+                        tooltip.style.left = x + "px";
+                        tooltip.style.top = y + "px";
+                    };
+                    const hide = () => tooltip.style.display = "none";
+
+                    svg.onmousemove = (e) => {
+                        const pin = e.target?.closest?.(".pin");
+                        if (pin?.dataset?.label) show(e, pin.dataset.label);
+                        else hide();
+                    };
+                    svg.onmouseleave = hide;
+                }
+            }
+
+            window.addEventListener("resize", layout);
+            document.addEventListener("DOMContentLoaded", () => {
+                const img = document.getElementById("hostPreviewImg");
+                if (img) img.addEventListener("load", layout);
+                setTimeout(layout, 0);
+            });
+        })();
+    </script>
+</body>
+</html>

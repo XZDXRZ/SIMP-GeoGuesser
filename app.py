@@ -139,9 +139,6 @@ def api_guess():
         return jsonify({"ok": False, "error": "Missing round_id."}), 400
     rd = get_round(round_id)
 
-    if rd.answer_xy is None:
-        return jsonify({"ok": False, "error": "Answer not set for this round."}), 400
-
     if not player or player not in STATE.players:
         return jsonify({"ok": False, "error": "Invalid player."}), 400
 
@@ -164,7 +161,6 @@ def api_round_state(round_id):
     rd = get_round(round_id)
     guesses = {p: {"x": xy[0], "y": xy[1]} for p, xy in rd.guesses.items()}
     return jsonify({"ok": True, "players": STATE.players, "guesses": guesses})
-
 
 # -----------------------------
 # Pages (Flat design)
@@ -239,6 +235,7 @@ def host():
 @app.route("/set_answer/<round_id>", methods=["GET", "POST"])
 def set_answer(round_id):
     rd = get_round(round_id)
+    round_num = STATE.rounds.index(rd) + 1
 
     if request.method == "POST":
         xv = request.form.get("x", "")
@@ -248,23 +245,23 @@ def set_answer(round_id):
         x = int(request.form["x"])
         y = int(request.form["y"])
         rd.answer_xy = (x, y)
+
+        if request.headers.get("X-Requested-With") == "fetch":
+            return jsonify({"ok": True, "answer": {"x": x, "y": y}})
+
         return redirect(url_for("host"))
 
-    return render_template("set_answer.html", map_fn=rd.map_filename)
+    return render_template("set_answer.html", map_fn=rd.map_filename, round_num=round_num)
 
 
 @app.route("/play/<round_id>")
 def play_round(round_id):
     rd = get_round(round_id)
 
-    # If answer isn't set yet, force host to set it first
-    if rd.answer_xy is None:
-        return redirect(url_for("set_answer", round_id=round_id))
-
-    # Figure out this round's position in the game
+    # Find this rounds index
     try:
-        idx = next(i for i, r in enumerate(STATE.rounds) if r.id == round_id)
-    except StopIteration:
+        idx = STATE.rounds.index(rd)
+    except ValueError:
         abort(404)
 
     total = len(STATE.rounds)
@@ -281,8 +278,8 @@ def play_round(round_id):
         total_rounds=total,
         prev_round_id=prev_round_id,
         next_round_id=next_round_id,
+        answer_set=(rd.answer_xy is not None),
     )
-
 
 @app.route("/leaderboard")
 def leaderboard():
@@ -292,8 +289,17 @@ def leaderboard():
     for i, rd in enumerate(STATE.rounds):
         if rd.answer_xy is None:
             continue
+
         guesses_obj = {p: {"x": xy[0], "y": xy[1]} for p, xy in rd.guesses.items()}
-        row = {"index": i, "map": rd.map_filename, "answer": rd.answer_xy, "guesses": guesses_obj, "scores": {}}
+
+        row = {
+            "index": i + 1,  # round number starting at 1
+            "map": rd.map_filename,
+            "answer": rd.answer_xy,
+            "guesses": guesses_obj,
+            "scores": {}
+        }
+
         for p in STATE.players:
             if p in rd.guesses:
                 d = pixel_distance(rd.guesses[p], rd.answer_xy)
@@ -302,6 +308,7 @@ def leaderboard():
                 row["scores"][p] = (s, int(round(d)))
             else:
                 row["scores"][p] = None
+
         round_rows.append(row)
 
     ranked = sorted(totals.items(), key=lambda kv: kv[1], reverse=True)
@@ -317,6 +324,32 @@ def leaderboard():
         back_round_id=back_round_id,
     )
 
+@app.route("/r/<round_id>")
+def public_round(round_id):
+    rd = get_round(round_id)
+
+    # Find this round's index
+    try:
+        idx = STATE.rounds.index(rd)
+    except ValueError:
+        abort(404)
+
+    total = len(STATE.rounds)
+    round_num = idx + 1
+
+    prev_round_id = STATE.rounds[idx - 1].id if idx > 0 else None
+    next_round_id = STATE.rounds[idx + 1].id if idx < total - 1 else None
+
+    return render_template(
+        "play_round.html",
+        map_fn=rd.map_filename,
+        round_id=round_id,
+        round_num=round_num,
+        total_rounds=total,
+        prev_round_id=prev_round_id,
+        next_round_id=next_round_id,
+        answer_set=(rd.answer_xy is not None),
+    )
 
 if __name__ == "__main__":
     print(f"Running on http://{APP_HOST}:{APP_PORT}")

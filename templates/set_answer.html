@@ -1,7 +1,7 @@
 <!doctype html>
 <html><head>
   <meta charset="utf-8" />
-  <title>Set Answer</title>
+  <title>Round {{ round_num }} Answer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
@@ -31,34 +31,160 @@
     <p class="muted" style="margin:0 0 14px 0;">Click on the map, then save.</p>
 
     <div class="card">
-      <div class="tag">Map</div>
-      <p class="muted" style="margin:10px 0 10px 0;">Selected: <span class="xy" id="xy">(none)</span></p>
-      {% if error %}
-        <p style="color:var(--bad); margin:0 0 10px 0;">{{error}}</p>
-      {% endif %}
-      <img id="map" src="{{url_for('uploads', filename=map_fn)}}" />
-      <form method="post" style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-        <input type="hidden" name="x" id="x" />
-        <input type="hidden" name="y" id="y" />
-        <button type="submit">Save answer</button>
-        <a href="{{url_for('host')}}">Cancel</a>
-      </form>
+        <div class="tag">Map</div>
+        <p class="muted" style="margin:10px 0 10px 0;">
+            Selected: <span class="xy" id="xy">(none)</span>
+        </p>
+
+        <div id="toast" style="
+          position: fixed;
+          right: 18px;
+          bottom: 18px;
+          display:none;
+          z-index: 9999;
+          padding: 10px 12px;
+          border-radius: 12px;
+          background: var(--card);
+          border: 1px solid var(--border);
+          color: var(--text);
+          font-weight: 900;
+          box-shadow: 0 10px 30px rgba(16,24,40,0.18);
+        "></div>
+
+        <div id="mapWrap" style="position:relative; display:block; width:100%; max-width:1200px;">
+            <img id="map" src="{{url_for('uploads', filename=map_fn)}}" />
+            <svg id="pinSvg"
+                 style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none;">
+            </svg>
+        </div>
+
+        <form id="answerForm" method="post"
+              style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <input type="hidden" name="x" id="x" />
+            <input type="hidden" name="y" id="y" />
+            <button type="submit">Save answer</button>
+            <a href="{{url_for('host')}}">Cancel</a>
+        </form>
     </div>
   </div>
 
-<script>
-const img = document.getElementById("map");
-const xInput = document.getElementById("x");
-const yInput = document.getElementById("y");
-const xy = document.getElementById("xy");
+  <script>
+      (function () {
+          const img = document.getElementById("map");
+          const xInput = document.getElementById("x");
+          const yInput = document.getElementById("y");
+          const xy = document.getElementById("xy");
+          const form = document.getElementById("answerForm");
+          const toast = document.getElementById("toast");
+          const svg = document.getElementById("pinSvg");
 
-img.addEventListener("click", (e) => {
-  const rect = img.getBoundingClientRect();
-  const x = Math.round((e.clientX - rect.left) * (img.naturalWidth / rect.width));
-  const y = Math.round((e.clientY - rect.top) * (img.naturalHeight / rect.height));
-  xInput.value = x;
-  yInput.value = y;
-  xy.textContent = `(${x}, ${y})`;
-});
-</script>
+          function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+          function drawAnswerPin(x, y) {
+              if (!svg || !img.naturalWidth || !img.naturalHeight) return;
+
+              const rect = img.getBoundingClientRect();
+              const w = rect.width;
+              const h = rect.height;
+
+              svg.setAttribute("width", w);
+              svg.setAttribute("height", h);
+              svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+
+              const scaleX = w / img.naturalWidth;
+              const scaleY = h / img.naturalHeight;
+
+              const cx = clamp(Math.round(x * scaleX), 0, w);
+              const cy = clamp(Math.round(y * scaleY), 0, h);
+
+              svg.innerHTML = `
+                <g>
+                    <path d="M ${cx} ${cy + 11} L ${cx - 6} ${cy + 25} L ${cx + 6} ${cy + 25} Z"
+                        fill="rgba(220,38,38,0.98)" stroke="rgba(16,24,40,0.18)" stroke-width="2"></path>
+                    <circle cx="${cx}" cy="${cy}" r="11" fill="rgba(255,255,255,0.98)"
+                            stroke="rgba(16,24,40,0.18)" stroke-width="2"></circle>
+                    <circle cx="${cx}" cy="${cy}" r="4" fill="rgba(220,38,38,0.98)"
+                            stroke="rgba(16,24,40,0.18)" stroke-width="1"></circle>
+                </g>
+                `;
+          }
+
+          function redrawIfSelected() {
+              if (xInput.value && yInput.value) {
+                  drawAnswerPin(Number(xInput.value), Number(yInput.value));
+              } else if (svg) {
+                  svg.innerHTML = "";
+              }
+          }
+
+          window.addEventListener("resize", redrawIfSelected);
+          img.addEventListener("load", redrawIfSelected);
+          setTimeout(redrawIfSelected, 0);
+          function showToast(msg) {
+              toast.textContent = msg;
+              toast.style.display = "block";
+              toast.style.opacity = "1";
+              toast.style.transform = "translateY(0)";
+              toast.style.transition = "opacity 250ms ease, transform 250ms ease";
+
+              clearTimeout(showToast._t1);
+              clearTimeout(showToast._t2);
+
+              // start fade after a moment
+              showToast._t1 = setTimeout(() => {
+                  toast.style.opacity = "0";
+                  toast.style.transform = "translateY(6px)";
+              }, 1100);
+
+              // hide after fade
+              showToast._t2 = setTimeout(() => {
+                  toast.style.display = "none";
+              }, 1500);
+          }
+
+          // pick coordinates
+          img.addEventListener("click", (e) => {
+              const rect = img.getBoundingClientRect();
+              const x = Math.round((e.clientX - rect.left) * (img.naturalWidth / rect.width));
+              const y = Math.round((e.clientY - rect.top) * (img.naturalHeight / rect.height));
+              xInput.value = x;
+              yInput.value = y;
+              xy.textContent = `(${x}, ${y})`;
+              drawAnswerPin(x, y);
+          });
+
+          // save without redirect
+          form.addEventListener("submit", async (e) => {
+              e.preventDefault();
+
+              if (!xInput.value || !yInput.value) {
+                  showToast("Pick a spot on the map first");
+                  return;
+              }
+
+              try {
+                  const fd = new FormData(form);
+
+                  const res = await fetch(window.location.href, {
+                      method: "POST",
+                      body: fd,
+                      headers: { "X-Requested-With": "fetch" }
+                  });
+
+                  const text = await res.text();
+                  let data = null;
+                  try { data = JSON.parse(text); } catch { }
+
+                  if (!res.ok || !data || !data.ok) {
+                      showToast((data && data.error) ? data.error : "Failed to save");
+                      return;
+                  }
+
+                  showToast("Answer saved ✅");
+              } catch (err) {
+                  showToast("Network error");
+              }
+          });
+      })();
+  </script>
 </body></html>
