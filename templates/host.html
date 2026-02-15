@@ -228,8 +228,8 @@
                             <a class="tag player-link"
                                href="{{ url_for('public_round', round_id=rd.id) }}"
                                data-answer-set="{{ 1 if rd.answer_xy else 0 }}"
-                               data-set-url="{{ url_for('set_answer', round_id=rd.id) }}"
-                               target="_blank">
+                               data-set-url="{{ url_for('set_answer', round_id=rd.id) }}">
+                               
                                 Open play
                             </a>
                         </td>
@@ -258,13 +258,12 @@
             <div class="row" style="justify-content:space-between; margin-top:10px;">
                 <div class="muted">Round: <code>{{round_index + 1}}</code> · Map size: <code>{{current.map_size[0]}}×{{current.map_size[1]}}</code></div>
                 <div class="row">
-                    <a class="tag" href="{{url_for('set_answer', round_id=current.id)}}" target="_blank" rel="noopener">Set answer</a>
+                    <a class="tag" href="{{url_for('set_answer', round_id=current.id)}}">Set answer</a>
 
                     <a class="tag player-link"
                        href="{{ url_for('public_round', round_id=current.id) }}"
                        data-answer-set="{{ 1 if current.answer_xy else 0 }}"
-                       data-set-url="{{ url_for('set_answer', round_id=current.id) }}"
-                       target="_blank">
+                       data-set-url="{{ url_for('set_answer', round_id=current.id) }}">
                         Player link
                     </a>
                 </div>
@@ -313,7 +312,7 @@
             <p class="muted">You must set the answer before players can join.</p>
 
             <div style="margin-top:14px;">
-                <a id="popupSetLink" class="tag" target="_blank">Go to Set Answer</a>
+                <a id="popupSetLink" class="tag">Go to Set Answer</a>
             </div>
 
             <div style="margin-top:16px;">

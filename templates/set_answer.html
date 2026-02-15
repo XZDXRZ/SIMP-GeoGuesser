@@ -153,37 +153,12 @@
               drawAnswerPin(x, y);
           });
 
-          // save without redirect
-          form.addEventListener("submit", async (e) => {
-              e.preventDefault();
-
+          form.addEventListener("submit", (e) => {
               if (!xInput.value || !yInput.value) {
-                  showToast("Pick a spot on the map first");
-                  return;
-              }
-
-              try {
-                  const fd = new FormData(form);
-
-                  const res = await fetch(window.location.href, {
-                      method: "POST",
-                      body: fd,
-                      headers: { "X-Requested-With": "fetch" }
-                  });
-
-                  const text = await res.text();
-                  let data = null;
-                  try { data = JSON.parse(text); } catch { }
-
-                  if (!res.ok || !data || !data.ok) {
-                      showToast((data && data.error) ? data.error : "Failed to save");
-                      return;
-                  }
-
-                  showToast("Answer saved ✅");
-              } catch (err) {
-                  showToast("Network error");
-              }
+              e.preventDefault();
+              showToast("Pick a spot on the map first");
+              return;}
+    //allow normal form submit (server redirects back to host)
           });
       })();
   </script>
